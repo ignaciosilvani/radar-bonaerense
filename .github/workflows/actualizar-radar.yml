@@ -28,6 +28,7 @@ jobs:
             any::xml2
             any::httr2
             any::lubridate
+            any::tidyr
 
       - name: Ejecutar actualización del Radar
         run: Rscript 09_actualizar_radar_completo.R
