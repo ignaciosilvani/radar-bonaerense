@@ -30,6 +30,7 @@ jobs:
             any::lubridate
             any::tidyr
             any::rvest
+            any::future
 
       - name: Ejecutar actualización del Radar
         run: Rscript 09_actualizar_radar_completo.R
