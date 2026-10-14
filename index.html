@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -62,6 +63,7 @@
       color: #6b7280;
       font-size: 13px;
       line-height: 1.4;
+      min-width: 175px;
     }
 
     .radar-actualizacion strong {
@@ -199,7 +201,7 @@
     }
 
     .noticia:hover {
-      box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
     }
 
     .noticia-meta {
@@ -253,15 +255,7 @@
       color: #858b92;
     }
 
-    .sin-resultados {
-      background: white;
-      border: 1px solid #e1e5e9;
-      border-radius: 10px;
-      padding: 35px;
-      text-align: center;
-      color: #6b7280;
-    }
-
+    .sin-resultados,
     .estado {
       background: white;
       border: 1px solid #e1e5e9;
@@ -336,9 +330,7 @@
        ===================================================== -->
 
   <header class="radar-header">
-
     <div class="container">
-
       <div class="radar-identidad">
 
         <div class="radar-marca">
@@ -355,11 +347,8 @@
         </div>
 
       </div>
-
     </div>
-
   </header>
-
 
   <main class="container">
 
@@ -402,7 +391,6 @@
       </div>
 
       <div class="busqueda campo">
-
         <label for="busqueda">Buscar</label>
 
         <input
@@ -410,11 +398,9 @@
           id="busqueda"
           placeholder="Buscar en títulos y noticias..."
         >
-
       </div>
 
     </section>
-
 
     <!-- ===================================================
          PESTAÑAS
@@ -422,26 +408,19 @@
 
     <nav class="tabs">
 
-      <button
-        class="tab active"
-        data-periodo="ahora">
+      <button class="tab active" data-periodo="ahora">
         Ahora
       </button>
 
-      <button
-        class="tab"
-        data-periodo="24h">
+      <button class="tab" data-periodo="24h">
         Últimas 24 horas
       </button>
 
-      <button
-        class="tab"
-        data-periodo="7d">
+      <button class="tab" data-periodo="7d">
         Últimos 7 días
       </button>
 
     </nav>
-
 
     <!-- ===================================================
          MÉTRICAS
@@ -450,58 +429,31 @@
     <section class="metricas">
 
       <div class="metrica">
-        <div class="metrica-label">
-          Noticias
-        </div>
-
-        <div
-          class="metrica-valor"
-          id="cantidadNoticias">
-          0
-        </div>
+        <div class="metrica-label">Noticias</div>
+        <div class="metrica-valor" id="cantidadNoticias">0</div>
       </div>
 
       <div class="metrica">
-        <div class="metrica-label">
-          Medios
-        </div>
-
-        <div
-          class="metrica-valor"
-          id="cantidadMedios">
-          0
-        </div>
+        <div class="metrica-label">Medios</div>
+        <div class="metrica-valor" id="cantidadMedios">0</div>
       </div>
 
       <div class="metrica">
-        <div class="metrica-label">
-          Partidos
-        </div>
-
-        <div
-          class="metrica-valor"
-          id="cantidadPartidos">
-          0
-        </div>
+        <div class="metrica-label">Partidos</div>
+        <div class="metrica-valor" id="cantidadPartidos">0</div>
       </div>
 
     </section>
-
 
     <!-- ===================================================
          NOTICIAS
          =================================================== -->
 
     <section id="noticias" class="noticias">
-
-      <div class="estado">
-        Cargando noticias...
-      </div>
-
+      <div class="estado">Cargando noticias...</div>
     </section>
 
   </main>
-
 
   <script>
 
@@ -510,11 +462,11 @@
        ===================================================== */
 
     const URL_DATOS = "data/noticias_7d.json";
+    const URL_ACTUALIZACION = "data/ultima_actualizacion.json";
+    const ZONA_HORARIA = "America/Argentina/Buenos_Aires";
 
     let noticias = [];
-
     let periodoActual = "ahora";
-
 
     /* =====================================================
        ELEMENTOS
@@ -535,15 +487,121 @@
     const ultimaActualizacion =
       document.getElementById("ultimaActualizacion");
 
+    /* =====================================================
+       FECHAS DE NOTICIAS
+       ===================================================== */
+
+    function convertirFecha(fecha) {
+      if (!fecha) {
+        return null;
+      }
+
+      const valor = String(fecha).trim();
+
+      // Si ya incluye zona horaria, respetarla.
+      if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(valor)) {
+        const resultado = new Date(valor);
+        return isNaN(resultado.getTime()) ? null : resultado;
+      }
+
+      // Las fechas sin zona horaria se interpretan como hora argentina.
+      const coincidencia = valor.match(
+        /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/
+      );
+
+      if (!coincidencia) {
+        return null;
+      }
+
+      const [
+        ,
+        anio,
+        mes,
+        dia,
+        hora,
+        minuto,
+        segundo = "0"
+      ] = coincidencia;
+
+      const fechaISO =
+        `${anio}-${mes}-${dia}T${hora}:${minuto}:${segundo}-03:00`;
+
+      const resultado = new Date(fechaISO);
+
+      return isNaN(resultado.getTime()) ? null : resultado;
+    }
+
+    function formatearFecha(fecha) {
+      const d = convertirFecha(fecha);
+
+      if (!d) {
+        return "";
+      }
+
+      return d.toLocaleString("es-AR", {
+        timeZone: ZONA_HORARIA,
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      });
+    }
 
     /* =====================================================
-       CARGAR JSON
+       FECHA DE ÚLTIMA ACTUALIZACIÓN DEL RADAR
+       ===================================================== */
+
+    async function cargarFechaActualizacion() {
+      try {
+        const respuesta = await fetch(
+          URL_ACTUALIZACION + "?t=" + Date.now()
+        );
+
+        if (!respuesta.ok) {
+          throw new Error(
+            "No se pudo cargar la fecha de actualización."
+          );
+        }
+
+        const datos = await respuesta.json();
+
+        const fecha = new Date(datos.ultima_actualizacion);
+
+        if (isNaN(fecha.getTime())) {
+          throw new Error(
+            "La fecha de actualización no es válida."
+          );
+        }
+
+        ultimaActualizacion.textContent =
+          fecha.toLocaleString("es-AR", {
+            timeZone: ZONA_HORARIA,
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23"
+          });
+
+      } catch (error) {
+        console.error(
+          "Error al leer la fecha de actualización:",
+          error
+        );
+
+        ultimaActualizacion.textContent = "No disponible";
+      }
+    }
+
+    /* =====================================================
+       CARGAR JSON DE NOTICIAS
        ===================================================== */
 
     async function cargarNoticias() {
-
       try {
-
         const respuesta = await fetch(
           URL_DATOS + "?t=" + Date.now()
         );
@@ -554,14 +612,23 @@
           );
         }
 
-        noticias = await respuesta.json();
+        const datos = await respuesta.json();
+
+        if (!Array.isArray(datos)) {
+          throw new Error(
+            "El archivo de noticias no contiene una lista válida."
+          );
+        }
+
+        noticias = datos;
+
+        await cargarFechaActualizacion();
 
         prepararFiltros();
 
         actualizar();
 
       } catch (error) {
-
         console.error(error);
 
         noticiasContainer.innerHTML = `
@@ -569,98 +636,34 @@
             No se pudieron cargar las noticias.
           </div>
         `;
-
       }
-
     }
-
-
-    /* =====================================================
-       FECHAS
-       ===================================================== */
-
-    function convertirFecha(fecha) {
-
-      if (!fecha) {
-        return null;
-      }
-
-      /*
-       * El JSON usa:
-       *
-       * YYYY-MM-DD HH:MM:SS
-       *
-       * Lo convertimos a ISO para JavaScript.
-       */
-
-      return new Date(
-        fecha.replace(" ", "T")
-      );
-
-    }
-
-
-    function formatearFecha(fecha) {
-
-      const d = convertirFecha(fecha);
-
-      if (!d || isNaN(d)) {
-        return "";
-      }
-
-      return d.toLocaleString(
-        "es-AR",
-        {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        }
-      );
-
-    }
-
 
     /* =====================================================
        FILTROS
        ===================================================== */
 
     function valoresUnicos(campo) {
-
       return [
         ...new Set(
-
           noticias
-
             .map(n => n[campo])
-
             .filter(
               x =>
                 x !== null &&
                 x !== undefined &&
                 String(x).trim() !== ""
             )
-
         )
-
-      ].sort(
-        (a, b) =>
-          String(a).localeCompare(
-            String(b),
-            "es"
-          )
+      ].sort((a, b) =>
+        String(a).localeCompare(String(b), "es")
       );
-
     }
 
-
     function llenarSelect(select, valores, textoInicial) {
-
       select.innerHTML = "";
 
-      const opcionInicial =
-        document.createElement("option");
+      const opcionInicial = document.createElement("option");
 
       opcionInicial.value = "";
       opcionInicial.textContent = textoInicial;
@@ -668,22 +671,16 @@
       select.appendChild(opcionInicial);
 
       valores.forEach(valor => {
-
-        const opcion =
-          document.createElement("option");
+        const opcion = document.createElement("option");
 
         opcion.value = valor;
         opcion.textContent = valor;
 
         select.appendChild(opcion);
-
       });
-
     }
 
-
     function prepararFiltros() {
-
       llenarSelect(
         seccionSelect,
         valoresUnicos("seccion"),
@@ -707,208 +704,130 @@
         valoresUnicos("medio"),
         "Todos"
       );
-
     }
-
 
     /* =====================================================
        PERÍODOS
        ===================================================== */
 
     function noticiasPorPeriodo() {
-
       const ahora = new Date();
 
       let limite;
 
       if (periodoActual === "ahora") {
-
-        /*
-         * "Ahora" = últimas 2 horas.
-         */
-
-        limite =
-          new Date(
-            ahora.getTime() -
-            2 * 60 * 60 * 1000
-          );
+        // "Ahora" = últimas 2 horas.
+        limite = new Date(
+          ahora.getTime() - 2 * 60 * 60 * 1000
+        );
 
       } else if (periodoActual === "24h") {
-
-        limite =
-          new Date(
-            ahora.getTime() -
-            24 * 60 * 60 * 1000
-          );
+        limite = new Date(
+          ahora.getTime() - 24 * 60 * 60 * 1000
+        );
 
       } else {
-
-        limite =
-          new Date(
-            ahora.getTime() -
-            7 * 24 * 60 * 60 * 1000
-          );
-
+        limite = new Date(
+          ahora.getTime() - 7 * 24 * 60 * 60 * 1000
+        );
       }
 
       return noticias.filter(n => {
+        const fecha = convertirFecha(n.fecha);
 
-        const fecha =
-          convertirFecha(n.fecha);
-
-        return fecha && fecha >= limite;
-
+        // Excluir fechas inválidas y noticias futuras.
+        return fecha &&
+          fecha >= limite &&
+          fecha <= ahora;
       });
-
     }
-
 
     /* =====================================================
        FILTRADO
        ===================================================== */
 
     function noticiasFiltradas() {
+      let datos = noticiasPorPeriodo();
 
-      let datos =
-        noticiasPorPeriodo();
+      const seccion = seccionSelect.value;
+      const partido = partidoSelect.value;
+      const localidad = localidadSelect.value;
+      const medio = medioSelect.value;
 
-
-      const seccion =
-        seccionSelect.value;
-
-      const partido =
-        partidoSelect.value;
-
-      const localidad =
-        localidadSelect.value;
-
-      const medio =
-        medioSelect.value;
-
-      const busqueda =
-        busquedaInput.value
-          .trim()
-          .toLowerCase();
-
+      const busqueda = busquedaInput.value
+        .trim()
+        .toLowerCase();
 
       if (seccion) {
-
-        datos =
-          datos.filter(
-            n => n.seccion === seccion
-          );
-
+        datos = datos.filter(n => n.seccion === seccion);
       }
-
 
       if (partido) {
-
-        datos =
-          datos.filter(
-            n => n.partido === partido
-          );
-
+        datos = datos.filter(n => n.partido === partido);
       }
-
 
       if (localidad) {
-
-        datos =
-          datos.filter(
-            n => n.localidad === localidad
-          );
-
+        datos = datos.filter(n => n.localidad === localidad);
       }
-
 
       if (medio) {
-
-        datos =
-          datos.filter(
-            n => n.medio === medio
-          );
-
+        datos = datos.filter(n => n.medio === medio);
       }
-
 
       if (busqueda) {
+        datos = datos.filter(n => {
+          const texto = [
+            n.titulo,
+            n.descripcion,
+            n.medio,
+            n.partido,
+            n.localidad,
+            n.seccion
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
 
-        datos =
-          datos.filter(n => {
-
-            const texto = [
-
-              n.titulo,
-              n.descripcion,
-              n.medio,
-              n.partido,
-              n.localidad,
-              n.seccion
-
-            ]
-
-              .filter(Boolean)
-
-              .join(" ")
-
-              .toLowerCase();
-
-            return texto.includes(busqueda);
-
-          });
-
+          return texto.includes(busqueda);
+        });
       }
 
-
       return datos;
-
     }
-
 
     /* =====================================================
        MÉTRICAS
        ===================================================== */
 
     function actualizarMetricas(datos) {
-
       cantidadNoticias.textContent =
         datos.length.toLocaleString("es-AR");
 
-
-      const medios =
-        new Set(
-          datos
-            .map(n => n.medio)
-            .filter(Boolean)
-        );
+      const medios = new Set(
+        datos
+          .map(n => n.medio)
+          .filter(Boolean)
+      );
 
       cantidadMedios.textContent =
         medios.size.toLocaleString("es-AR");
 
-
-      const partidos =
-        new Set(
-          datos
-            .map(n => n.partido)
-            .filter(Boolean)
-        );
+      const partidos = new Set(
+        datos
+          .map(n => n.partido)
+          .filter(Boolean)
+      );
 
       cantidadPartidos.textContent =
         partidos.size.toLocaleString("es-AR");
-
     }
 
-
     /* =====================================================
-       TARJETAS DE NOTICIAS
+       SEGURIDAD HTML
        ===================================================== */
 
     function escaparHTML(texto) {
-
-      if (
-        texto === null ||
-        texto === undefined
-      ) {
+      if (texto === null || texto === undefined) {
         return "";
       }
 
@@ -918,61 +837,50 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
-
     }
 
+    function validarURL(valor) {
+      try {
+        const enlace = new URL(valor || "");
+
+        if (
+          enlace.protocol === "http:" ||
+          enlace.protocol === "https:"
+        ) {
+          return escaparHTML(enlace.href);
+        }
+
+      } catch (error) {
+        // URL ausente o inválida.
+      }
+
+      return "#";
+    }
+
+    /* =====================================================
+       TARJETAS DE NOTICIAS
+       ===================================================== */
 
     function crearNoticia(noticia) {
+      const titulo = escaparHTML(noticia.titulo);
 
-      const titulo =
-        escaparHTML(
-          noticia.titulo
-        );
+      const descripcion = noticia.descripcion
+        ? escaparHTML(noticia.descripcion)
+        : "";
 
-      const descripcion =
-        noticia.descripcion
-          ? escaparHTML(
-              noticia.descripcion
-            )
-          : "";
+      const medio = escaparHTML(noticia.medio || "");
+      const seccion = escaparHTML(noticia.seccion || "");
+      const partido = escaparHTML(noticia.partido || "");
+      const localidad = escaparHTML(noticia.localidad || "");
 
-      const medio =
-        escaparHTML(
-          noticia.medio || ""
-        );
+      const fecha = formatearFecha(noticia.fecha);
+      const url = validarURL(noticia.url);
 
-      const seccion =
-        escaparHTML(
-          noticia.seccion || ""
-        );
-
-      const partido =
-        escaparHTML(
-          noticia.partido || ""
-        );
-
-      const localidad =
-        escaparHTML(
-          noticia.localidad || ""
-        );
-
-      const fecha =
-        formatearFecha(
-          noticia.fecha
-        );
-
-      const url =
-        noticia.url || "#";
-
-
-      const ubicacion =
-        [partido, localidad]
-          .filter(Boolean)
-          .join(" · ");
-
+      const ubicacion = [partido, localidad]
+        .filter(Boolean)
+        .join(" · ");
 
       return `
-
         <article class="noticia">
 
           <div class="noticia-meta">
@@ -984,13 +892,8 @@
             ${
               seccion
                 ? `
-                  <span class="noticia-separador">
-                    ·
-                  </span>
-
-                  <span class="noticia-seccion">
-                    ${seccion}
-                  </span>
+                  <span class="noticia-separador">·</span>
+                  <span class="noticia-seccion">${seccion}</span>
                 `
                 : ""
             }
@@ -998,33 +901,22 @@
             ${
               fecha
                 ? `
-                  <span class="noticia-separador">
-                    ·
-                  </span>
-
-                  <span>
-                    ${fecha}
-                  </span>
+                  <span class="noticia-separador">·</span>
+                  <span>${fecha}</span>
                 `
                 : ""
             }
 
           </div>
 
-
           <h2 class="noticia-titulo">
-
             <a
               href="${url}"
               target="_blank"
               rel="noopener noreferrer">
-
               ${titulo}
-
             </a>
-
           </h2>
-
 
           ${
             descripcion
@@ -1035,7 +927,6 @@
               `
               : ""
           }
-
 
           ${
             ubicacion
@@ -1048,96 +939,41 @@
           }
 
         </article>
-
       `;
-
     }
-
 
     /* =====================================================
        MOSTRAR NOTICIAS
        ===================================================== */
 
     function mostrarNoticias(datos) {
-
       if (!datos.length) {
-
         noticiasContainer.innerHTML = `
-
           <div class="sin-resultados">
-
             No se encontraron noticias
             para los filtros seleccionados.
-
           </div>
-
         `;
 
         return;
-
       }
 
-
-      noticiasContainer.innerHTML =
-        datos
-          .map(crearNoticia)
-          .join("");
-
+      noticiasContainer.innerHTML = datos
+        .map(crearNoticia)
+        .join("");
     }
-
 
     /* =====================================================
        ACTUALIZAR INTERFAZ
        ===================================================== */
 
     function actualizar() {
-
-      const datos =
-        noticiasFiltradas();
-
+      const datos = noticiasFiltradas();
 
       actualizarMetricas(datos);
 
       mostrarNoticias(datos);
-
-
-      if (noticias.length) {
-
-        const fechas =
-          noticias
-
-            .map(n =>
-              convertirFecha(n.fecha)
-            )
-
-            .filter(Boolean)
-
-            .sort(
-              (a, b) =>
-                b - a
-            );
-
-
-        if (fechas.length) {
-
-          ultimaActualizacion.textContent =
-            fechas[0].toLocaleString(
-              "es-AR",
-              {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-              }
-            );
-
-        }
-
-      }
-
     }
-
 
     /* =====================================================
        EVENTOS
@@ -1149,66 +985,39 @@
       localidadSelect,
       medioSelect
     ].forEach(elemento => {
-
-      elemento.addEventListener(
-        "change",
-        actualizar
-      );
-
+      elemento.addEventListener("change", actualizar);
     });
 
+    busquedaInput.addEventListener("input", actualizar);
 
-    busquedaInput.addEventListener(
-      "input",
-      actualizar
-    );
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
 
+        document.querySelectorAll(".tab").forEach(t => {
+          t.classList.remove("active");
+        });
 
-    document
-      .querySelectorAll(".tab")
-      .forEach(tab => {
+        tab.classList.add("active");
 
-        tab.addEventListener(
-          "click",
-          () => {
+        periodoActual = tab.dataset.periodo;
 
-            document
-              .querySelectorAll(".tab")
-              .forEach(t =>
-                t.classList.remove("active")
-              );
-
-            tab.classList.add("active");
-
-            periodoActual =
-              tab.dataset.periodo;
-
-            actualizar();
-
-          }
-        );
-
+        actualizar();
       });
-
+    });
 
     /* =====================================================
-       INICIO
+       INICIO Y ACTUALIZACIÓN AUTOMÁTICA
        ===================================================== */
 
     cargarNoticias();
 
-
     /*
-     * Comprobamos cada 5 minutos si el JSON
-     * cambió en GitHub.
-     *
-     * No depende de R ni de Shiny.
+     * Volvemos a consultar los JSON cada cinco minutos.
+     * La fecha de actualización se obtiene del archivo
+     * data/ultima_actualizacion.json.
      */
 
-    setInterval(
-      cargarNoticias,
-      5 * 60 * 1000
-    );
+    setInterval(cargarNoticias, 5 * 60 * 1000);
 
   </script>
 
