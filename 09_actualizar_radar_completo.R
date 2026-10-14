@@ -216,6 +216,7 @@ ejecutar_etapa(
 )
 
 
+
 # ------------------------------------------------------------
 # 7. Verificación final
 # ------------------------------------------------------------
@@ -226,26 +227,25 @@ cat("                 VERIFICACIÓN FINAL\n")
 cat("============================================================\n")
 cat("\n")
 
-
 archivos_finales <- c(
   "feeds_detectados.rds",
   "noticias_historicas.rds",
   "vistas_noticias.rds",
-  "data/noticias_7d.json"
+  "data/noticias_7d.json",
+  "data/ultima_actualizacion.json"
 )
 
 for (archivo in archivos_finales) {
-  
+
   existe <- file.exists(archivo)
-  
+
   cat(
     ifelse(existe, "[OK] ", "[FALTA] "),
     archivo,
     "\n"
   )
-  
-}
 
+}
 
 # ------------------------------------------------------------
 # 8. Verificar archivos faltantes
@@ -258,12 +258,12 @@ faltantes_finales <- archivos_finales[
 cat("\n")
 
 if (length(faltantes_finales) > 0) {
-  
+
   cat("============================================================\n")
   cat("                 ACTUALIZACIÓN INCOMPLETA\n")
   cat("============================================================\n")
   cat("\n")
-  
+
   cat(
     "Faltan los siguientes archivos:\n",
     paste(
@@ -272,36 +272,9 @@ if (length(faltantes_finales) > 0) {
     ),
     "\n"
   )
-  
+
   stop(
     "La actualización terminó con archivos faltantes."
   )
-  
+
 }
-
-
-# ------------------------------------------------------------
-# 9. Estado final
-# ------------------------------------------------------------
-
-cat("============================================================\n")
-cat("          ACTUALIZACIÓN COMPLETA - OK\n")
-cat("============================================================\n")
-cat("\n")
-
-cat(
-  "Finalización:",
-  format(
-    Sys.time(),
-    "%Y-%m-%d %H:%M:%S"
-  ),
-  "\n"
-)
-
-cat("\n")
-
-cat(
-  "El Radar Bonaerense está actualizado.\n"
-)
-
-cat("\n")
