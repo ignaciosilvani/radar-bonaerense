@@ -204,6 +204,34 @@ jsonlite::write_json(
 )
 
 # ------------------------------------------------------------
+# 12.1. Guardar fecha y hora real de actualización
+# ------------------------------------------------------------
+
+ARCHIVO_ACTUALIZACION <- "data/ultima_actualizacion.json"
+
+fecha_actualizacion <- format(
+Sys.time(),
+format = "%Y-%m-%dT%H:%M:%SZ",
+tz = "UTC"
+)
+
+jsonlite::write_json(
+list(
+ultima_actualizacion = fecha_actualizacion
+),
+ARCHIVO_ACTUALIZACION,
+auto_unbox = TRUE,
+pretty = TRUE
+)
+
+cat(
+"Fecha y hora real de actualización (UTC):",
+fecha_actualizacion,
+"\n"
+)
+
+
+# ------------------------------------------------------------
 # 13. Resumen y diagnóstico
 # ------------------------------------------------------------
 tamano_mb <- file.info(ARCHIVO_PUBLICO)$size / 1024^2
