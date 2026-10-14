@@ -256,3 +256,34 @@ cat(
   format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = ZONA_HORARIA),
   "\n\n"
 )
+
+
+# ============================================================
+# GUARDAR FECHA Y HORA DE ACTUALIZACIÓN
+# ============================================================
+
+dir.create(
+  "data",
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+fecha_actualizacion <- format(
+  Sys.time(),
+  "%Y-%m-%dT%H:%M:%SZ",
+  tz = "UTC"
+)
+
+jsonlite::write_json(
+  list(
+    ultima_actualizacion = fecha_actualizacion
+  ),
+  path = "data/ultima_actualizacion.json",
+  auto_unbox = TRUE,
+  pretty = TRUE
+)
+
+message(
+  "Fecha de actualización guardada: ",
+  fecha_actualizacion
+)
